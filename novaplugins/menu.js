@@ -1,89 +1,54 @@
-const { prefix, botName } = require('../config'); // Adjust path if needed
+const { MessageType } = require('@adiwajshing/baileys');
+
+// Menu for NOVA-XMD POWERED BY DARK TECH
 
 module.exports = {
   name: 'menu',
-  alias: ['help'],
-  category: 'general',
-  desc: 'Show full command list',
-  usage: `${prefix}menu`,
-  async exec(m, sock) {
+  description: 'Displays the main menu for NOVA-XMD POWERED BY DARK TECH.',
+  async execute(message, client) {
     const menuText = `
-╭━━━〔 ${botName || 'NOVA XMD BOT'} MENU 〕━━━╮
-┃
-┃ 👑 *OWNER COMMANDS*
-┃ ┣ ${prefix}owner
-┃ ┣ ${prefix}shutdown
-┃ ┣ ${prefix}restart
-┃ ┣ ${prefix}setprefix <symbol>
-┃ ┣ ${prefix}block <user>
-┃ ┣ ${prefix}unblock <user>
-┃ ┣ ${prefix}uptime
-┃ ┣ ${prefix}broadcast <text>
-┃ ┣ ${prefix}mode [public/private/self]
-┃ ┣ ${prefix}setpp
-┃ ┣ ${prefix}join <group link>
-┃ ┗ ${prefix}leavegc
-┃
-┃ 🛡️ *GROUP COMMANDS*
-┃ ┣ ${prefix}kick @user
-┃ ┣ ${prefix}add <number>
-┃ ┣ ${prefix}promote @user
-┃ ┣ ${prefix}demote @user
-┃ ┣ ${prefix}mute
-┃ ┣ ${prefix}unmute
-┃ ┣ ${prefix}group [open/close]
-┃ ┣ ${prefix}tagall
-┃ ┣ ${prefix}setwelcome <msg>
-┃ ┣ ${prefix}setgoodbye <msg>
-┃ ┣ ${prefix}delwelcome
-┃ ┣ ${prefix}delgoodbye
-┃ ┗ ${prefix}antilink [on/off]
-┃
-┃ ⚙️ *SETTINGS*
-┃ ┣ ${prefix}prefix <symbol>
-┃ ┣ ${prefix}welcome [on/off]
-┃ ┣ ${prefix}goodbye [on/off]
-┃ ┣ ${prefix}xp [on/off]
-┃ ┣ ${prefix}cooldown <sec>
-┃ ┣ ${prefix}lang <code>
-┃ ┣ ${prefix}autorespond [on/off]
-┃ ┣ ${prefix}log [on/off]
-┃ ┗ ${prefix}resetsettings
-┃
-┃ 🔍 *SEARCH*
-┃ ┣ ${prefix}google <query>
-┃ ┣ ${prefix}image <query>
-┃ ┣ ${prefix}yt <query>
-┃ ┣ ${prefix}lyrics <song>
-┃ ┣ ${prefix}weather <city>
-┃ ┣ ${prefix}define <word>
-┃ ┣ ${prefix}news <topic>
-┃ ┗ ${prefix}translate <text>
-┃
-┃ 🎮 *FUN*
-┃ ┣ ${prefix}joke
-┃ ┣ ${prefix}meme
-┃ ┣ ${prefix}quote
-┃ ┣ ${prefix}flip
-┃ ┣ ${prefix}roll
-┃ ┣ ${prefix}8ball <q>
-┃ ┣ ${prefix}riddle
-┃ ┣ ${prefix}love <name1> <name2>
-┃ ┣ ${prefix}cat
-┃ ┣ ${prefix}dog
-┃ ┗ ${prefix}fact
-┃
-┃ ℹ️ *SYSTEM*
-┃ ┣ ${prefix}menu
-┃ ┣ ${prefix}ping
-┃ ┣ ${prefix}about
-┃ ┣ ${prefix}help
-┃ ┣ ${prefix}stats
-┃ ┣ ${prefix}invite
-┃ ┗ ${prefix}feedback <msg>
-┃
-╰━━━〔 POWERED BY DARK_TECH 〕━━━╯
+      *NOVA-XMD POWERED BY DARK TECH - Command Menu*
+
+      👑 *Owner Commands*:
+      ➡️ /ownerhelp - Display owner help menu
+      ➡️ /restart - Restart the bot
+      ➡️ /broadcast - Broadcast a message to all groups
+      ➡️ /setprefix - Change the bot prefix
+
+      ⚙️ *Settings Commands*:
+      ➡️ /setwelcome - Set a welcome message for new members
+      ➡️ /setgoodbye - Set a goodbye message for members who leave
+      ➡️ /setgroupname - Set the group name
+      ➡️ /setlang - Set the language for the group
+
+      🔍 *Search Commands*:
+      ➡️ /google <query> - Search Google for a query
+      ➡️ /imdb <movie/tv-show> - Search IMDb for a movie or TV show
+      ➡️ /anime <anime name> - Search for an anime
+
+      🎉 *Fun Commands*:
+      ➡️ /joke - Get a random joke
+      ➡️ /meme - Get a random meme
+      ➡️ /randomfact - Get a random fun fact
+      ➡️ /8ball <question> - Ask the Magic 8-Ball a question
+      ➡️ /quote - Get a random inspirational quote
+
+      🎮 *Group Commands*:
+      ➡️ /add <user> - Add a user to the group
+      ➡️ /kick <user> - Remove a user from the group
+      ➡️ /promote <user> - Promote a user to admin
+      ➡️ /demote <user> - Demote an admin to member
+      ➡️ /setlanguage <language> - Set the language for the group
     `;
-    await sock.sendMessage(m.chat, { text: menuText }, { quoted: m });
-  },
+
+    const options = {
+      quoted: message,
+      contextInfo: {
+        mentionedJid: [message.sender]
+      },
+      messageType: MessageType.text,
+    };
+
+    await message.reply(menuText, options);
+  }
 };
