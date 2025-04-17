@@ -1,162 +1,145 @@
-const { prefix, settings } = require('./config'); // Ensure your config file is correct
+const fs = require('fs');
+const { MessageType } = require('@adiwajshing/baileys');
 
-// Settings Command Handler
-async function settingsCommand(m) {
-  const command = m.text.trim().slice(prefix.length).split(' ')[0];
+module.exports = {
+  name: 'settingsCommands',
+  description: 'Bot settings commands for NOVA-XMD POWERED BY DARK TECH.',
+  async execute(message, client, args) {
+    const command = args[0];
 
-  switch(command) {
-    case 'prefix':
-      // Change the command prefix
-      const newPrefix = m.text.slice(prefix.length + 'prefix'.length).trim();
-      if (!newPrefix) {
-        return m.reply("Please provide a new prefix.");
-      }
-      settings.prefix = newPrefix;
-      m.reply(`Prefix has been changed to: ${newPrefix}`);
-      break;
+    // Ensure the message is from an admin
+    if (!message.isGroup) {
+      return message.reply('This command can only be used in a group.');
+    }
 
-    case 'welcome':
-      // Enable or disable welcome message in groups
-      const actionWelcome = m.text.slice(prefix.length + 'welcome'.length).trim().toLowerCase();
-      if (actionWelcome === 'enable') {
-        settings.welcomeMessage = true;
-        m.reply("Welcome message has been enabled.");
-      } else if (actionWelcome === 'disable') {
-        settings.welcomeMessage = false;
-        m.reply("Welcome message has been disabled.");
-      } else {
-        m.reply("Please specify 'enable' or 'disable' to toggle welcome messages.");
-      }
-      break;
+    const group = await message.getGroupMetadata();
+    const adminList = group.participants.filter((p) => p.isAdmin);
 
-    case 'goodbye':
-      // Enable or disable goodbye message in groups
-      const actionGoodbye = m.text.slice(prefix.length + 'goodbye'.length).trim().toLowerCase();
-      if (actionGoodbye === 'enable') {
-        settings.goodbyeMessage = true;
-        m.reply("Goodbye message has been enabled.");
-      } else if (actionGoodbye === 'disable') {
-        settings.goodbyeMessage = false;
-        m.reply("Goodbye message has been disabled.");
-      } else {
-        m.reply("Please specify 'enable' or 'disable' to toggle goodbye messages.");
-      }
-      break;
+    if (!adminList.some((admin) => admin.id === message.sender.id)) {
+      return message.reply('You must be an admin to use this command.');
+    }
 
-    case 'xp':
-      // Enable or disable XP system
-      const actionXp = m.text.slice(prefix.length + 'xp'.length).trim().toLowerCase();
-      if (actionXp === 'enable') {
-        settings.xpSystem = true;
-        m.reply("XP system has been enabled.");
-      } else if (actionXp === 'disable') {
-        settings.xpSystem = false;
-        m.reply("XP system has been disabled.");
-      } else {
-        m.reply("Please specify 'enable' or 'disable' to toggle the XP system.");
-      }
-      break;
+    // Handle different setting commands
+    switch (command.toLowerCase()) {
+      case 'setprefix':
+        await setPrefixCommand(message, args, client);
+        break;
 
-    case 'autorespond':
-      // Enable or disable auto-response feature
-      const actionAutoRespond = m.text.slice(prefix.length + 'autorespond'.length).trim().toLowerCase();
-      if (actionAutoRespond === 'enable') {
-        settings.autoRespond = true;
-        m.reply("Auto-response has been enabled.");
-      } else if (actionAutoRespond === 'disable') {
-        settings.autoRespond = false;
-        m.reply("Auto-response has been disabled.");
-      } else {
-        m.reply("Please specify 'enable' or 'disable' to toggle auto-response.");
-      }
-      break;
+      case 'setlanguage':
+        await setLanguageCommand(message, args, client);
+        break;
 
-    case 'cooldown':
-      // Set the cooldown time for commands
-      const cooldownTime = m.text.slice(prefix.length + 'cooldown'.length).trim();
-      if (!cooldownTime || isNaN(cooldownTime)) {
-        return m.reply("Please provide a valid number for the cooldown time (in seconds).");
-      }
-      settings.cooldown = parseInt(cooldownTime);
-      m.reply(`Cooldown time has been set to: ${cooldownTime} seconds.`);
-      break;
+      case 'getsettings':
+        await getSettingsCommand(message, client);
+        break;
 
-    case 'lang':
-      // Change the bot's language
-      const newLang = m.text.slice(prefix.length + 'lang'.length).trim().toLowerCase();
-      const availableLanguages = ['english', 'spanish', 'french', 'german', 'italian'];
-      if (availableLanguages.includes(newLang)) {
-        settings.language = newLang;
-        m.reply(`Bot language has been changed to: ${newLang}`);
-      } else {
-        m.reply("Please specify a valid language (e.g., 'english', 'spanish').");
-      }
-      break;
+      case 'resetsettings':
+        await resetSettingsCommand(message, client);
+        break;
 
-    case 'timezone':
-      // Set the bot's timezone
-      const newTimezone = m.text.slice(prefix.length + 'timezone'.length).trim();
-      if (!newTimezone) {
-        return m.reply("Please provide a valid timezone (e.g., 'GMT+0', 'GMT-4').");
-      }
-      settings.timezone = newTimezone;
-      m.reply(`Bot's timezone has been changed to: ${newTimezone}`);
-      break;
+      default:
+        message.reply('Unknown setting command. Use `setprefix`, `setlanguage`, `getsettings`, or `resetsettings`.');
+    }
+  }
+};
 
-    case 'admin':
-      // Add or remove an admin from the bot
-      const adminAction = m.text.slice(prefix.length + 'admin'.length).trim().split(' ')[0];
-      const adminNumber = m.text.slice(prefix.length + 'admin'.length).trim().split(' ')[1];
-      if (adminAction === 'add' && adminNumber) {
-        settings.admins.push(adminNumber);
-        m.reply(`${adminNumber} has been added as an admin.`);
-      } else if (adminAction === 'remove' && adminNumber) {
-        const index = settings.admins.indexOf(adminNumber);
-        if (index > -1) {
-          settings.admins.splice(index, 1);
-          m.reply(`${adminNumber} has been removed as an admin.`);
-        } else {
-          m.reply(`${adminNumber} is not an admin.`);
-        }
-      } else {
-        m.reply("Please provide a valid action ('add' or 'remove') and admin number.");
-      }
-      break;
+// Set bot prefix command: Changes the bot's command prefix
+async function setPrefixCommand(message, args, client) {
+  const newPrefix = args[1];
+  if (!newPrefix) {
+    return message.reply('Please provide a new prefix.');
+  }
 
-    case 'log':
-      // Enable or disable logging
-      const actionLog = m.text.slice(prefix.length + 'log'.length).trim().toLowerCase();
-      if (actionLog === 'enable') {
-        settings.logging = true;
-        m.reply("Logging has been enabled.");
-      } else if (actionLog === 'disable') {
-        settings.logging = false;
-        m.reply("Logging has been disabled.");
-      } else {
-        m.reply("Please specify 'enable' or 'disable' to toggle logging.");
-      }
-      break;
+  try {
+    // Load existing settings or initialize if not available
+    let settings = await loadSettings();
+    settings.prefix = newPrefix;
 
-    case 'reset':
-      // Reset all settings to default
-      settings = {
-        prefix: '!', // Default prefix
-        welcomeMessage: true,
-        goodbyeMessage: true,
-        xpSystem: true,
-        autoRespond: true,
-        cooldown: 5, // Default cooldown in seconds
-        language: 'english',
-        timezone: 'GMT+0',
-        admins: [],
-        logging: true,
-      };
-      m.reply("All settings have been reset to default.");
-      break;
-
-    default:
-      m.reply("Invalid settings command. Use 'help' to see the available settings commands.");
+    // Save the updated settings
+    await saveSettings(settings);
+    await message.reply(`Bot prefix has been changed to: ${newPrefix}`);
+  } catch (error) {
+    console.error(error);
+    await message.reply('An error occurred while trying to change the prefix.');
   }
 }
 
-module.exports = { settingsCommand };
+// Set bot language command: Changes the bot's language
+async function setLanguageCommand(message, args, client) {
+  const newLanguage = args[1];
+  if (!newLanguage) {
+    return message.reply('Please provide a new language (e.g., "en", "es").');
+  }
+
+  try {
+    // Load existing settings or initialize if not available
+    let settings = await loadSettings();
+    settings.language = newLanguage;
+
+    // Save the updated settings
+    await saveSettings(settings);
+    await message.reply(`Bot language has been changed to: ${newLanguage}`);
+  } catch (error) {
+    console.error(error);
+    await message.reply('An error occurred while trying to change the language.');
+  }
+}
+
+// Get current bot settings command: Fetches and displays the current settings
+async function getSettingsCommand(message, client) {
+  try {
+    const settings = await loadSettings();
+    const currentSettings = `
+      Bot Prefix: ${settings.prefix || 'Not set'}
+      Bot Language: ${settings.language || 'Not set'}
+    `;
+    await message.reply(`Current bot settings:\n${currentSettings}`);
+  } catch (error) {
+    console.error(error);
+    await message.reply('An error occurred while trying to fetch the settings.');
+  }
+}
+
+// Reset bot settings command: Resets settings to default
+async function resetSettingsCommand(message, client) {
+  try {
+    // Reset to default settings
+    const defaultSettings = {
+      prefix: '/',
+      language: 'en'
+    };
+
+    // Save default settings
+    await saveSettings(defaultSettings);
+    await message.reply('Bot settings have been reset to default values.');
+  } catch (error) {
+    console.error(error);
+    await message.reply('An error occurred while trying to reset the settings.');
+  }
+}
+
+// Load settings from a JSON file (simulate reading settings from a file)
+async function loadSettings() {
+  return new Promise((resolve, reject) => {
+    fs.readFile('./settings.json', 'utf8', (err, data) => {
+      if (err) {
+        resolve({ prefix: '/', language: 'en' }); // Default values
+      } else {
+        resolve(JSON.parse(data));
+      }
+    });
+  });
+}
+
+// Save settings to a JSON file (simulate writing settings to a file)
+async function saveSettings(settings) {
+  return new Promise((resolve, reject) => {
+    fs.writeFile('./settings.json', JSON.stringify(settings, null, 2), 'utf8', (err) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
+      }
